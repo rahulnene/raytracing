@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default, PartialEq)]
 pub struct Vec3 {
     coords: [f64; 3],
 }
@@ -61,7 +61,7 @@ impl Neg for Vec3 {
     }
 }
 
-pub fn normalize(v: Vec3) -> Vec3 {
+pub fn normalized(v: Vec3) -> Vec3 {
     v / v.magnitude()
 }
 

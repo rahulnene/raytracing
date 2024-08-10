@@ -43,6 +43,10 @@ impl Interval {
         self.min < other.max && self.max > other.min
     }
 
+    pub fn clamp(&self, x: f64) -> f64 {
+        x.max(self.min).min(self.max)
+    }
+
     pub fn extend(&mut self, other: &Self) {
         self.min = self.min.min(other.min);
         self.max = self.max.max(other.max);

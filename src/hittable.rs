@@ -18,7 +18,7 @@ impl HitRecord {
 }
 
 pub trait Hittable {
-    fn hit(&self, r: &Ray, interval: Interval, hit_record: &mut HitRecord) -> bool;
+    fn hit(&self, r: &Ray, interval: &Interval, hit_record: &mut HitRecord) -> bool;
 }
 
 #[derive(Default)]
@@ -37,7 +37,7 @@ impl HittableList {
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, r: &Ray, interval: Interval, hit_record: &mut HitRecord) -> bool {
+    fn hit(&self, r: &Ray, interval: &Interval, hit_record: &mut HitRecord) -> bool {
         let mut temp_record = HitRecord::default();
         let mut hit_anything = false;
         let mut closest_so_far = interval.max;
@@ -45,7 +45,7 @@ impl Hittable for HittableList {
         for hittable in &self.list {
             if hittable.hit(
                 r,
-                Interval::new(interval.min, closest_so_far),
+                &Interval::new(interval.min, closest_so_far),
                 &mut temp_record,
             ) {
                 hit_anything = true;

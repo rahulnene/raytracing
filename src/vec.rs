@@ -124,3 +124,15 @@ impl Mul<Vec3> for f64 {
         Vec3::new(self * v.x(), self * v.y(), self * v.z())
     }
 }
+
+impl Mul<i32> for Vec3 {
+    type Output = Self;
+
+    fn mul(self, rhs: i32) -> Self::Output {
+        Self::new(
+            self.x() * rhs as f64,
+            self.y() * rhs as f64,
+            self.z() * rhs as f64,
+        )
+    }
+}

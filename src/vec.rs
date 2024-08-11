@@ -28,7 +28,7 @@ impl Vec3 {
         self.coords.iter().map(|c| c * c).sum()
     }
 
-    pub fn dot(&self, rhs: Self) -> f64 {
+    pub fn dot(&self, rhs: &Self) -> f64 {
         self.coords
             .iter()
             .zip(rhs.coords.iter())
@@ -42,6 +42,40 @@ impl Vec3 {
             self.z() * rhs.x() - self.x() * rhs.z(),
             self.x() * rhs.y() - self.y() * rhs.x(),
         )
+    }
+
+    pub fn random() -> Self {
+        Self::new(rand::random(), rand::random(), rand::random())
+    }
+
+    pub fn random_range(min: f64, max: f64) -> Self {
+        Self::new(
+            rand::random::<f64>() * (max - min) + min,
+            rand::random::<f64>() * (max - min) + min,
+            rand::random::<f64>() * (max - min) + min,
+        )
+    }
+
+    pub fn random_in_unit_sphere() -> Self {
+        loop {
+            let p = Self::random_range(-1.0, 1.0);
+            if p.length_squared() < 1.0 {
+                return p;
+            }
+        }
+    }
+
+    pub fn random_unit_vector() -> Self {
+        normalized(Self::random_in_unit_sphere())
+    }
+
+    pub fn random_in_hemisphere(normal: Self) -> Self {
+        let in_unit_sphere = Self::random_in_unit_sphere();
+        if in_unit_sphere.dot(&normal) > 0.0 {
+            in_unit_sphere
+        } else {
+            -in_unit_sphere
+        }
     }
 }
 
@@ -134,5 +168,13 @@ impl Mul<i32> for Vec3 {
             self.y() * rhs as f64,
             self.z() * rhs as f64,
         )
+    }
+}
+
+impl Mul<Vec3> for Vec3 {
+    type Output = Self;
+
+    fn mul(self, rhs: Vec3) -> Self::Output {
+        Self::new(self.x() * rhs.x(), self.y() * rhs.y(), self.z() * rhs.z())
     }
 }

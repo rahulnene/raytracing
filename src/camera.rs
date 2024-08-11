@@ -1,6 +1,6 @@
 use crate::{
     color::{write_color, Color},
-    hittable::{HitRecord, Hittable},
+    hittable::{Hittable, HittableList},
     interval::Interval,
     ray::Ray,
     vec::{normalized, Point3, Vec3},
@@ -16,10 +16,16 @@ pub struct Camera {
     pixel_offset_u: Vec3,
     pixel_offset_v: Vec3,
     samples_per_pixel: i32,
+    recursion_limit: i32,
 }
 
 impl Camera {
-    pub fn init(aspect_ratio: f64, image_width: i32, samples_per_pixel: i32) -> Self {
+    pub fn init(
+        aspect_ratio: f64,
+        image_width: i32,
+        samples_per_pixel: i32,
+        recursion_limit: i32,
+    ) -> Self {
         let focal_length = 1.0;
         let image_height = (image_width as f64 / aspect_ratio) as i32;
         let view_port_height = 2.0;
@@ -36,6 +42,7 @@ impl Camera {
             image_width,
             image_height,
             samples_per_pixel,
+            recursion_limit,
             center: Point3::default(),
             pixel_00_loc: viewport_origin + 0.5 * (pixel_offset_u + pixel_offset_v),
             pixel_offset_u,
@@ -43,18 +50,25 @@ impl Camera {
         }
     }
 
-    fn ray_color(&self, r: &Ray, world: &impl Hittable) -> Color {
-        let mut hit_record = HitRecord::default();
-        if world.hit(r, &Interval::new(0.0, f64::INFINITY), &mut hit_record) {
-            return 0.5 * (hit_record.normal + Vec3::new(1.0, 1.0, 1.0));
+    fn ray_color(&self, r: &Ray, depth: i32, world: &HittableList) -> Color {
+        if let Some(hit) = world.hit(r, &Interval::new(0.0001, f64::MAX)) {
+            if depth <= 0 {
+                return Color::default();
+            } else {
+                if let Some((scattered, attenuation)) = hit.material.scatter(r, &hit) {
+                    return attenuation * self.ray_color(&scattered, depth - 1, world);
+                } else {
+                    return Color::default();
+                }
+            }
+        } else {
+            let unit_dir = normalized(r.direction());
+            let t = 0.5 * (unit_dir.y() + 1.0);
+            (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
         }
-
-        let unit_direction = normalized(r.direction());
-        let t = 0.5 * (unit_direction.y() + 1.0);
-        (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
     }
 
-    pub fn render(&self, world: &impl Hittable) {
+    pub fn render(&self, world: &HittableList) {
         print!("P3\n{} {}\n255\n", self.image_width, self.image_height);
 
         for j in (0..self.image_height).rev() {
@@ -63,7 +77,8 @@ impl Camera {
                 let mut pixel_color = Color::default();
                 for _ in 0..self.samples_per_pixel {
                     let ray = self.get_ray(i as f64, j as f64);
-                    pixel_color += self.ray_color(&ray, world);
+
+                    pixel_color += self.ray_color(&ray, self.recursion_limit, world);
                 }
                 write_color(
                     &mut io::stdout(),

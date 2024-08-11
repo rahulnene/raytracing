@@ -1,24 +1,15 @@
-use crate::{interval::Interval, ray::Ray, vec::Vec3};
+use crate::{interval::Interval, material::Material, ray::Ray, vec::Vec3};
 
-#[derive(Default, Clone, Copy)]
-pub struct HitRecord {
+#[derive(Clone, Copy)]
+pub struct HitRecord<'a> {
     pub time: f64,
     pub point: Vec3,
     pub normal: Vec3,
-}
-
-impl HitRecord {
-    pub fn new(p: Vec3, normal: Vec3, t: f64) -> Self {
-        Self {
-            point: p,
-            normal,
-            time: t,
-        }
-    }
+    pub material: &'a dyn Material,
 }
 
 pub trait Hittable {
-    fn hit(&self, r: &Ray, interval: &Interval, hit_record: &mut HitRecord) -> bool;
+    fn hit(&self, r: &Ray, interval: &Interval) -> Option<HitRecord>;
 }
 
 #[derive(Default)]
@@ -37,20 +28,20 @@ impl HittableList {
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, r: &Ray, interval: &Interval, hit_record: &mut HitRecord) -> bool {
-        let mut temp_record = HitRecord::default();
-        let mut hit_anything = false;
+    fn hit(&self, r: &Ray, interval: &Interval) -> Option<HitRecord> {
         let mut closest_so_far = interval.max;
+        let mut hit_anything = None;
 
         for hittable in &self.list {
-            if hittable.hit(
+            if let Some(hit) = hittable.hit(
                 r,
-                &Interval::new(interval.min, closest_so_far),
-                &mut temp_record,
+                &Interval {
+                    min: interval.min,
+                    max: closest_so_far,
+                },
             ) {
-                hit_anything = true;
-                closest_so_far = temp_record.time;
-                *hit_record = temp_record;
+                closest_so_far = hit.time;
+                hit_anything = Some(hit);
             }
         }
 

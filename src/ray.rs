@@ -1,13 +1,14 @@
-use crate::vec::{Point3, Vec3};
+use crate::vec::Point3;
+use nalgebra::Vector3;
 
 #[derive(Default)]
 pub struct Ray {
     origin: Point3,
-    direction: Vec3,
+    direction: Vector3<f64>,
 }
 
 impl Ray {
-    pub fn new(origin: Point3, direction: Vec3) -> Self {
+    pub fn new(origin: Point3, direction: Vector3<f64>) -> Self {
         Self { origin, direction }
     }
 
@@ -15,7 +16,7 @@ impl Ray {
         self.origin + self.direction * lambda
     }
 
-    pub fn direction(&self) -> Vec3 {
+    pub fn direction(&self) -> Vector3<f64> {
         self.direction
     }
 

@@ -1,10 +1,10 @@
-use rand::{random, seq::index};
+use rand::random;
 
 use crate::{
     color::Color,
     hittable::HitRecord,
     ray::Ray,
-    vec::{normalized, Vec3},
+    vec::{random_in_unit_sphere, Vec3},
 };
 
 fn reflect(vec: &Vec3, normal: &Vec3) -> Vec3 {
@@ -12,7 +12,7 @@ fn reflect(vec: &Vec3, normal: &Vec3) -> Vec3 {
 }
 
 fn refract(vec: &Vec3, normal: &Vec3, eta_ratio: f64) -> Option<Vec3> {
-    let normed = normalized(*vec);
+    let normed = vec.normalize();
     let dt = normed.dot(normal);
     let discriminant = 1.0 - eta_ratio.powi(2) * (1.0 - dt.powi(2));
     if discriminant > 0.0 {
@@ -44,11 +44,8 @@ impl Lambertian {
 
 impl Material for Lambertian {
     fn scatter(&self, _ray: &Ray, hit_record: &HitRecord) -> Option<(Ray, Color)> {
-        let mut scatter_direction = hit_record.normal + Vec3::random_unit_vector();
-        if scatter_direction.length_squared() < 0.0001 {
-            scatter_direction = hit_record.normal;
-        }
-        let scattered = Ray::new(hit_record.point, scatter_direction);
+        let target = hit_record.point + hit_record.normal + random_in_unit_sphere();
+        let scattered = Ray::new(hit_record.point, target - hit_record.point);
         Some((scattered, self.albedo))
     }
 }
@@ -70,9 +67,9 @@ impl Metallic {
 
 impl Material for Metallic {
     fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<(Ray, Color)> {
-        let mut reflected = reflect(&normalized(ray.direction()), &hit_record.normal);
+        let mut reflected = reflect(&(ray.direction().normalize()), &hit_record.normal);
         if self.fuzz > 0.0 {
-            reflected += self.fuzz * Vec3::random_in_unit_sphere();
+            reflected += self.fuzz * random_in_unit_sphere();
         }
         if reflected.dot(&hit_record.normal) > 0.0 {
             Some((Ray::new(hit_record.point, reflected), self.albedo))
